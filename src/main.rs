@@ -1,3 +1,5 @@
+use babygemma::tensor::Tensor;
+
 fn main() {
-    println!("Hello, world!");
+    let tensor = Tensor::new((4, 8));
 }
