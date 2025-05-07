@@ -1,5 +1,7 @@
-use babygemma::tensor::Tensor;
+use babygemma;
+use std::fs;
 
 fn main() {
-    let tensor = Tensor::new((4, 8));
+    let model_weights_data = fs::read("model/model.safetensors").unwrap();
+    let weights_map = babygemma::load_weights(&model_weights_data);
 }
