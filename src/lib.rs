@@ -1,9 +1,16 @@
 use half::bf16;
 use safetensors::SafeTensors;
 use std::collections::HashMap;
-use std::fs::File;
+pub mod compute_handle;
 pub mod gpu;
-pub fn load_weights(data: &[u8]) -> HashMap<String, Vec<f32>> {
+
+#[derive(Debug)]
+pub struct BgTensor {
+    pub data: Vec<f32>,
+    pub shape: Vec<usize>,
+}
+
+pub fn load_weights(data: &[u8]) -> HashMap<String, BgTensor> {
     let tensor_data = SafeTensors::deserialize(data).unwrap();
     let mut map = HashMap::new();
     for (weight_name, tensor) in tensor_data.tensors() {
@@ -15,7 +22,12 @@ pub fn load_weights(data: &[u8]) -> HashMap<String, Vec<f32>> {
                 float.to_f32()
             })
             .collect();
-        map.insert(weight_name, f32_weights);
+        let shape = tensor.shape().to_vec();
+        let tensor = BgTensor {
+            data: f32_weights,
+            shape,
+        };
+        map.insert(weight_name, tensor);
     }
     map
 }
