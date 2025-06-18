@@ -21,6 +21,24 @@ fn linear(input: &Vec<Vec<f32>>, kernel: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     output_buffer
 }
 
+fn linear_1d(input: &[f32], kernel: &[f32]) -> Vec<f32> {
+    let n_tokens = 2;
+    let in_features = 3;
+    let out_features = 4;
+    let mut output = vec![0.; out_features * n_tokens];
+
+    for j in 0..out_features {
+        for i in 0..in_features {
+            for k in 0..n_tokens {
+                output[k * out_features + j] +=
+                    input[k * in_features + i] * kernel[j * in_features + i];
+            }
+        }
+    }
+
+    output
+}
+
 fn main() {
     // let model_weights_file = File::open("model/model.safetensors").unwrap();
     // let model_weights_data = unsafe { Mmap::map(&model_weights_file).unwrap() };
@@ -33,11 +51,12 @@ fn main() {
     // println!("{}", out.len());
     // println!("{out:?}")
     let input = vec![1.0959, -0.5172, 1.4105, 1.3620, -0.0860, 1.6156];
-
     let kernel = vec![
         -0.2377, -0.6112, 0.0929, -0.6267, 0.7036, -0.4276, -0.3583, 1.4472, -0.1927, 0.8928,
         -0.4741, -2.1613,
     ];
+    let cpu_out = linear_1d(&input, &kernel);
+    println!("{cpu_out:?}");
     let input_tensor = BgTensor {
         data: input,
         shape: vec![2, 3],

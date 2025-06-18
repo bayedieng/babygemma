@@ -41,9 +41,10 @@ impl GpuContext {
         kernel: &BgTensor,
         params: &LinearParams,
     ) -> BgTensor {
-        // [in_features, out_features]
-        let output = vec![0.; params.in_features * params.out_features];
-
+        // [n_tokens, out_features]
+        let output = vec![0.; params.n_tokens * params.out_features];
+        println!("{input:?}");
+        println!("{kernel:?}");
         let input_buffer_slice = unsafe {
             std::slice::from_raw_parts(
                 input.data.as_ptr() as *const u8,
@@ -85,25 +86,31 @@ impl GpuContext {
                     contents: output_buffer_slice,
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                 });
-
+        println!("{}", params.in_features);
+        println!("{}", params.out_features);
+        println!("{}", params.n_tokens);
         let shader_src = format!(
             "
         @group(0) @binding(0) var<storage, read> input: array<f32>;
         @group(0) @binding(1) var<storage, read> kernel: array<f32>;
         @group(0) @binding(2) var<storage, read_write> output: array<f32>;
 
-        @compute @workgroup_size(64) 
+        @compute @workgroup_size(64, 1, 1) 
         fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {{
             let glob_i = global_id.x;
             let n_in_features = u32({});
             let n_out_features = u32({});
-            let n_tokens: u32 = u32({});
+            let n_tokens = u32({});
 
             if (glob_i >= n_out_features) {{
                 return;
             }}
-            for (var i: u32; i <= n_in_features; i++) {{
-                output[n_tokens * n_out_features + glob_i] += input[n_tokens * n_in_features + i] * kernel[glob_i * n_in_features + i];
+            var sum: f32 = 0.0;
+            for (var i: u32 = 0; i < n_in_features; i++) {{
+            for (var k: u32 = 0; k < n_tokens; k++) {{
+            output[k * n_out_features + glob_i] += input[k * n_in_features + i] * kernel[glob_i * n_in_features + i];
+                
+            }}
             }}
             }}
               
